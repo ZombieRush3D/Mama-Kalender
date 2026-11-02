@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#fff7f3">
+<title>Mama-Kalender</title>
+<style>
+:root{--pink:#e9a6ad;--rose:#c96f80;--cream:#fffaf7;--ink:#493b3c;--muted:#8d7778;--line:#f0dfe0;--green:#718d78}
+*{box-sizing:border-box}
+body{margin:0;background:linear-gradient(145deg,#fff7f3,#fbecef);font-family:system-ui,-apple-system,Segoe UI,sans-serif;color:var(--ink);min-height:100vh;padding:20px}
+main{max-width:950px;margin:0 auto}
+header{text-align:center;padding:20px 10px 24px}
+header .flower{font-size:30px}
+h1{font-family:Georgia,serif;font-weight:500;font-size:clamp(2rem,7vw,3.2rem);margin:6px 0;color:#9e5967}
+header p{margin:0;color:var(--muted)}
+.panel{background:#fffdfc;border:1px solid #f3e4e3;border-radius:22px;box-shadow:0 12px 35px #a86b7112;padding:clamp(14px,3vw,25px);margin-bottom:18px}
+.toolbar{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:18px}
+.month{font-family:Georgia,serif;font-size:clamp(1.35rem,4vw,1.8rem);color:#965866;margin:0;text-transform:capitalize}
+button{font:inherit;cursor:pointer;border:0;border-radius:12px;padding:10px 14px;background:#f8e8e9;color:#89515d}
+button:hover{filter:brightness(.97)}
+.nav{display:flex;gap:7px}
+.nav button{font-size:1.15rem;padding:8px 13px}
+.today{background:#f4e8dd;color:#805b45}
+.calendar{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px}
+.weekday{text-align:center;color:#a17e82;font-size:.78rem;font-weight:700;padding:7px 0}
+.day{min-height:88px;border:1px solid var(--line);border-radius:13px;padding:7px;background:#fffdfc;text-align:left;color:var(--ink);display:flex;flex-direction:column;gap:4px;min-width:0}
+.day.empty{background:transparent;border-color:transparent;cursor:default}
+.day .num{font-weight:650;font-size:.9rem}
+.day.today-date{border:2px solid var(--pink);background:#fff8f7}
+.day.selected{background:#fff0f1;border-color:#d98e99}
+.event-dot{font-size:.68rem;line-height:1.25;background:#f8e5e7;color:#89515d;border-radius:6px;padding:3px 4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.more{font-size:.65rem;color:var(--muted)}
+.below{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+h2{font:500 1.35rem Georgia,serif;color:#965866;margin:0 0 14px}
+.selected-date{font-size:.9rem;color:var(--muted);margin:-7px 0 13px}
+.event-list{display:flex;flex-direction:column;gap:8px}
+.event{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;background:#fff7f6;border-radius:12px;padding:10px 12px}
+.event strong{display:block;font-size:.92rem;font-weight:650}
+.event small{color:var(--muted)}
+.delete{padding:5px 9px;background:transparent;color:#b16a72;font-size:1rem}
+.empty-note{color:#a38d8e;font-size:.9rem}
+form{display:flex;flex-direction:column;gap:10px}
+input,select{width:100%;padding:12px;border:1px solid #ead8d9;border-radius:11px;background:#fffdfc;color:var(--ink);font:inherit}
+input:focus,select:focus{outline:2px solid #e9b5bc;outline-offset:1px}
+.check{display:flex;align-items:center;gap:9px;color:var(--muted);font-size:.9rem}
+.check input{width:auto;accent-color:var(--rose)}
+.add{background:var(--rose);color:white;font-weight:650;padding:12px}
+footer{text-align:center;color:#aa9293;font-size:.78rem;padding:4px 0 20px}
+@media(max-width:650px){body{padding:10px}.below{grid-template-columns:1fr}.day{min-height:70px;padding:5px 4px}.calendar{gap:4px}.weekday{font-size:.7rem}.event-dot{font-size:.6rem;padding:2px}.toolbar{margin-bottom:12px}.panel{border-radius:17px}}
+@media(max-width:370px){.day{min-height:62px}.event-dot{font-size:.55rem}}
+</style>
+</head>
+<body>
+<main>
+<header>
+  <div class="flower">🌷 ✨ 🌷</div>
+  <h1>Mama-Kalender</h1>
+  <p>Ein kleiner Platz für all die schönen und wichtigen Tage</p>
+</header>
+
+<section class="panel" aria-label="Kalender">
+  <div class="toolbar">
+    <h2 class="month" id="monthLabel"></h2>
+    <div class="nav">
+      <button id="prev" aria-label="Vorheriger Monat">‹</button>
+      <button class="today" id="goToday">Heute</button>
+      <button id="next" aria-label="Nächster Monat">›</button>
+    </div>
+  </div>
+  <div class="calendar" id="calendar"></div>
+</section>
+
+<div class="below">
+  <section class="panel">
+    <h2 id="dayHeading">Termine</h2>
+    <p class="selected-date" id="selectedLabel">Wähle einen Tag im Kalender aus.</p>
+    <div class="event-list" id="eventList"><p class="empty-note">Noch keine Termine für diesen Tag.</p></div>
+  </section>
+  <section class="panel">
+    <h2>Neuen Termin eintragen</h2>
+    <form id="eventForm">
+      <input id="eventTitle" type="text" maxlength="70" placeholder="Was steht an?" required>
+      <input id="eventDate" type="date" required>
+      <select id="eventType" aria-label="Art des Termins">
+        <option value="🌸">🌸 Allgemeiner Termin</option>
+        <option value="🎂">🎂 Geburtstag</option>
+        <option value="💗">💗 Familie</option>
+        <option value="🩺">🩺 Gesundheit</option>
+        <option value="⭐">⭐ Wichtig</option>
+      </select>
+      <label class="check"><input id="yearly" type="checkbox"> Jedes Jahr wiederholen</label>
+      <button class="add" type="submit">＋ Termin speichern</button>
+    </form>
+  </section>
+</div>
+<footer>Mit Liebe organisiert · Deine Termine bleiben in diesem Browser gespeichert 💗</footer>
+</main>
+<script>
+(() => {
+ const $ = id => document.getElementById(id);
+ const today = new Date();
+ const iso = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+ let view = new Date(today.getFullYear(), today.getMonth(), 1);
+ let selected = iso(today);
+ let events = [];
+ try { events = JSON.parse(localStorage.getItem('mamaKalenderEvents') || '[]'); } catch { events = []; }
+
+ const save = () => localStorage.setItem('mamaKalenderEvents', JSON.stringify(events));
+ const pretty = s => new Date(s+'T12:00:00').toLocaleDateString('de-DE',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+ const forDate = date => events.filter(e => e.date === date || (e.yearly && e.date.slice(5) === date.slice(5)));
+ function render(){
+   $('monthLabel').textContent = view.toLocaleDateString('de-DE',{month:'long',year:'numeric'});
+   const cal = $('calendar'); cal.innerHTML='';
+   ['Mo','Di','Mi','Do','Fr','Sa','So'].forEach(w=>{const el=document.createElement('div');el.className='weekday';el.textContent=w;cal.append(el);});
+   const first = new Date(view.getFullYear(),view.getMonth(),1);
+   const offset = (first.getDay()+6)%7;
+   const count = new Date(view.getFullYear(),view.getMonth()+1,0).getDate();
+   for(let i=0;i<offset;i++){const blank=document.createElement('div');blank.className='day empty';cal.append(blank);}
+   for(let day=1;day<=count;day++){
+     const date=iso(new Date(view.getFullYear(),view.getMonth(),day));
+     const btn=document.createElement('button');btn.type='button';btn.className='day';
+     if(date===iso(today))btn.classList.add('today-date');
+     if(date===selected)btn.classList.add('selected');
+     const num=document.createElement('span');num.className='num';num.textContent=day;btn.append(num);
+     const dayEvents=forDate(date);
+     dayEvents.slice(0,2).forEach(e=>{const tag=document.createElement('span');tag.className='event-dot';tag.textContent=e.type+' '+e.title;btn.append(tag);});
+     if(dayEvents.length>2){const more=document.createElement('span');more.className='more';more.textContent=`+${dayEvents.length-2} weitere`;btn.append(more);}
+     btn.addEventListener('click',()=>{selected=date;$('eventDate').value=date;render();});
+     cal.append(btn);
+   }
+   renderEvents();
+ }
+ function renderEvents(){
+   $('dayHeading').textContent='Termine';
+   $('selectedLabel').textContent=pretty(selected);
+   const list=$('eventList');list.innerHTML='';
+   const items=forDate(selected);
+   if(!items.length){const p=document.createElement('p');p.className='empty-note';p.textContent='Noch keine Termine für diesen Tag.';list.append(p);return;}
+   items.forEach(e=>{
+     const row=document.createElement('div');row.className='event';
+     const info=document.createElement('div');
+     const strong=document.createElement('strong');strong.textContent=e.type+' '+e.title;info.append(strong);
+     const small=document.createElement('small');small.textContent=e.yearly?'Wiederholt sich jedes Jahr': 'Einmaliger Termin';info.append(small);
+     row.append(info);
+     const del=document.createElement('button');del.className='delete';del.type='button';del.textContent='Löschen';del.setAttribute('aria-label',e.title+' löschen');
+     del.addEventListener('click',()=>{events=events.filter(x=>x.id!==e.id);save();render();});
+     row.append(del);list.append(row);
+   });
+ }
+ $('prev').addEventListener('click',()=>{view.setMonth(view.getMonth()-1);render();});
+ $('next').addEventListener('click',()=>{view.setMonth(view.getMonth()+1);render();});
+ $('goToday').addEventListener('click',()=>{view=new Date(today.getFullYear(),today.getMonth(),1);selected=iso(today);$('eventDate').value=selected;render();});
+ $('eventDate').value=selected;
+ $('eventForm').addEventListener('submit',e=>{
+   e.preventDefault();
+   const title=$('eventTitle').value.trim(),date=$('eventDate').value;
+   if(!title||!date)return;
+   events.push({id:Date.now().toString(36)+Math.random().toString(36).slice(2),title,date,type:$('eventType').value,yearly:$('yearly').checked});
+   save();selected=date;view=new Date(date+'T12:00:00');$('eventTitle').value='';$('yearly').checked=false;render();
+ });
+ render();
+})();
+</script>
+</body>
+</html>
